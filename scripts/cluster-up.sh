@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Bring up the argo-lab kind cluster. Idempotent.
+# Bring up the argo-labs kind cluster. Idempotent.
 set -euo pipefail
 
-CLUSTER_NAME="argo-lab"
+CLUSTER_NAME="argo-labs"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG="${REPO_ROOT}/kind/kind-config.yaml"
 

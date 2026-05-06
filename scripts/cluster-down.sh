@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Tear down the argo-lab kind cluster.
+# Tear down the argo-labs kind cluster.
 set -euo pipefail
 
-CLUSTER_NAME="argo-lab"
+CLUSTER_NAME="argo-labs"
 
 if ! kind get clusters 2>/dev/null | grep -qx "${CLUSTER_NAME}"; then
   echo "Cluster '${CLUSTER_NAME}' does not exist. Nothing to do."

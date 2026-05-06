@@ -1,4 +1,4 @@
-# Cluster definition for the argo-lab.
+# Cluster definition for the argo-labs.
 #
 # Topology:
 #   - 1 control-plane node
@@ -13,7 +13,7 @@
 #   the cluster (port mappings are baked in at create-time).
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-name: argo-lab
+name: argo-labs
 
 nodes:
   - role: control-plane
