@@ -17,8 +17,8 @@ A hands-on lab for learning **ArgoCD** and **Argo Rollouts** on a local Kubernet
 
 ### Phase 1 — Foundation
 - [x] 01 — [Bootstrap a kind cluster](blog/01-bootstrapping-kind.md)
-- [x] 02 — Install ArgoCD, access the UI, the App CRD
-- [ ] 03 — First "Hello GitOps" sync
+- [x] 02 — [Install ArgoCD, access the UI, the App CRD](blog/02-installing-argocd.md)
+- [x] 03 — [First "Hello GitOps" sync](blog/03-first-gitops-sync.md)
 
 ### Phase 2 — GitOps patterns
 - [ ] 04 — App-of-Apps vs ApplicationSets
@@ -38,3 +38,5 @@ A hands-on lab for learning **ArgoCD** and **Argo Rollouts** on a local Kubernet
 ## Blog index
 
 1. [Bootstrapping a kind cluster for the argo-labs](blog/01-bootstrapping-kind.md)
+2. [Installing ArgoCD on kind with Helm](blog/02-installing-argocd.md)
+3. [First GitOps sync with ArgoCD](blog/03-first-gitops-sync.md)
