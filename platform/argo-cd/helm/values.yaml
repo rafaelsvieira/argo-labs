@@ -1,0 +1,796 @@
+# nameOverride: argocd
+createAggregateRoles: false
+createClusterRoles: true
+openshift:
+  enabled: false
+crds:
+  install: true
+  keep: true
+  annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true
+global:
+  domain: argocd.example.com
+  revisionHistoryLimit: 3
+  image:
+    repository: quay.io/argoproj/argocd
+    imagePullPolicy: IfNotPresent
+  logging:
+    format: json
+    level: info
+  addPrometheusAnnotations: false
+  networkPolicy:
+    create: false
+    defaultDenyIngress: false
+  nodeSelector:
+    kubernetes.io/os: linux
+  affinity:
+    podAntiAffinity: soft
+    nodeAffinity:
+      type: hard
+configs:
+  cm:
+    create: true
+    application.instanceLabelKey: argocd.argoproj.io/instance
+    application.sync.impersonation.enabled: false
+    exec.enabled: false
+    admin.enabled: true
+    timeout.reconciliation: 120s
+    timeout.reconciliation.jitter: 60s
+    timeout.hard.reconciliation: 0s
+    statusbadge.enabled: false
+    resource.customizations.ignoreResourceUpdates.all: |
+      jsonPointers:
+        - /status
+    resource.customizations.ignoreResourceUpdates.argoproj.io_Application: |
+      jqPathExpressions:
+        - '.metadata.annotations."notified.notifications.argoproj.io"'
+        - '.metadata.annotations."argocd.argoproj.io/refresh"'
+        - '.metadata.annotations."argocd.argoproj.io/hydrate"'
+        - '.operation'
+    resource.customizations.ignoreResourceUpdates.argoproj.io_Rollout: |
+      jqPathExpressions:
+        - '.metadata.annotations."notified.notifications.argoproj.io"'
+    resource.customizations.ignoreResourceUpdates.autoscaling_HorizontalPodAutoscaler: |
+      jqPathExpressions:
+        - '.metadata.annotations."autoscaling.alpha.kubernetes.io/behavior"'
+        - '.metadata.annotations."autoscaling.alpha.kubernetes.io/conditions"'
+        - '.metadata.annotations."autoscaling.alpha.kubernetes.io/metrics"'
+        - '.metadata.annotations."autoscaling.alpha.kubernetes.io/current-metrics"'
+    resource.customizations.ignoreResourceUpdates.ConfigMap: |
+      jqPathExpressions:
+        - '.metadata.annotations."cluster-autoscaler.kubernetes.io/last-updated"'
+        - '.metadata.annotations."control-plane.alpha.kubernetes.io/leader"'
+    resource.customizations.ignoreResourceUpdates.apps_ReplicaSet: |
+      jqPathExpressions:
+        - '.metadata.annotations."deployment.kubernetes.io/desired-replicas"'
+        - '.metadata.annotations."deployment.kubernetes.io/max-replicas"'
+        - '.metadata.annotations."rollout.argoproj.io/desired-replicas"'
+    resource.customizations.ignoreResourceUpdates.discovery.k8s.io_EndpointSlice: |
+      jsonPointers:
+        - /metadata
+        - /endpoints
+        - /ports
+    resource.customizations.ignoreResourceUpdates.Endpoints: |
+      jsonPointers:
+        - /metadata
+        - /subsets
+    resource.exclusions: |
+      - apiGroups:
+        - ''
+        - discovery.k8s.io
+        kinds:
+        - Endpoints
+        - EndpointSlice
+      - apiGroups:
+        - coordination.k8s.io
+        kinds:
+        - Lease
+      - apiGroups:
+        - authentication.k8s.io
+        - authorization.k8s.io
+        kinds:
+        - SelfSubjectReview
+        - TokenReview
+        - LocalSubjectAccessReview
+        - SelfSubjectAccessReview
+        - SelfSubjectRulesReview
+        - SubjectAccessReview
+      - apiGroups:
+        - certificates.k8s.io
+        kinds:
+        - CertificateSigningRequest
+      - apiGroups:
+        - cert-manager.io
+        kinds:
+        - CertificateRequest
+      - apiGroups:
+        - cilium.io
+        kinds:
+        - CiliumIdentity
+        - CiliumEndpoint
+        - CiliumEndpointSlice
+      - apiGroups:
+        - kyverno.io
+        - reports.kyverno.io
+        - wgpolicyk8s.io
+        kinds:
+        - PolicyReport
+        - ClusterPolicyReport
+        - EphemeralReport
+        - ClusterEphemeralReport
+        - AdmissionReport
+        - ClusterAdmissionReport
+        - BackgroundScanReport
+        - ClusterBackgroundScanReport
+        - UpdateRequest
+  params:
+    create: true
+  rbac:
+    create: true
+    scopes: "[groups]"
+    policy.matchMode: glob
+  ssh:
+    create: true
+    knownHosts: |
+      [ssh.github.com]:443 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+      [ssh.github.com]:443 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+      [ssh.github.com]:443 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+      bitbucket.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPIQmuzMBuKdWeF4+a2sjSSpBK0iqitSQ+5BM9KhpexuGt20JpTVM7u5BDZngncgrqDMbWdxMWWOGtZ9UgbqgZE=
+      bitbucket.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIazEu89wgQZ4bqs3d63QSMzYVa0MuJ2e2gKTKqu+UUO
+      bitbucket.org ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDQeJzhupRu0u0cdegZIa8e86EG2qOCsIsD1Xw0xSeiPDlCr7kq97NLmMbpKTX6Esc30NuoqEEHCuc7yWtwp8dI76EEEB1VqY9QJq6vk+aySyboD5QF61I/1WeTwu+deCbgKMGbUijeXhtfbxSxm6JwGrXrhBdofTsbKRUsrN1WoNgUa8uqN1Vx6WAJw1JHPhglEGGHea6QICwJOAr/6mrui/oB7pkaWKHj3z7d1IC4KWLtY47elvjbaTlkN04Kc/5LFEirorGYVbt15kAUlqGM65pk6ZBxtaO3+30LVlORZkxOh+LKL/BvbZ/iRNhItLqNyieoQj/uh/7Iv4uyH/cV/0b4WDSd3DptigWq84lJubb9t/DnZlrJazxyDCulTmKdOR7vs9gMTo+uoIrPSb8ScTtvw65+odKAlBj59dhnVp9zd7QUojOpXlL62Aw56U4oO+FALuevvMjiWeavKhJqlR7i5n9srYcrNV7ttmDw7kf/97P5zauIhxcjX+xHv4M=
+      github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+      github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+      github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+      gitlab.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY=
+      gitlab.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf
+      gitlab.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsj2bNKTBSpIYDEGk9KxsGh3mySTRgMtXL583qmBpzeQ+jqCMRgBqB98u3z++J1sKlXHWfM9dyhSevkMwSbhoR8XIq/U0tCNyokEi/ueaBMCvbcTHhO7FcwzY92WK4Yt0aGROY5qX2UKSeOvuP4D6TPqKF1onrSzH9bx9XUf2lEdWT/ia1NEKjunUqu1xOB/StKDHMoX4/OKyIzuS0q/T1zOATthvasJFoPrAjkohTyaDUz2LN5JoH839hViyEG82yB+MjcFV5MU3N1l1QL3cVUCh93xSaua1N85qivl+siMkPGbO5xR/En4iEY6K2XPASUEMaieWVNTRCtJ4S8H+9
+      ssh.dev.azure.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7Hr1oTWqNqOlzGJOfGJ4NakVyIzf1rXYd4d7wo6jBlkLvCA4odBlL0mDUyZ0/QUfTTqeu+tm22gOsv+VrVTMk6vwRU75gY/y9ut5Mb3bR5BV58dKXyq9A9UeB5Cakehn5Zgm6x1mKoVyf+FFn26iYqXJRgzIZZcZ5V6hrE0Qg39kZm4az48o0AUbf6Sp4SLdvnuMa2sVNwHBboS7EJkm57XQPVU3/QpyNLHbWDdzwtrlS+ez30S3AdYhLKEOxAG8weOnyrtLJAUen9mTkol8oII1edf7mWWbWVf0nBmly21+nZcmCTISQBtdcyPaEno7fFQMDD26/s0lfKob4Kw8H
+      vs-ssh.visualstudio.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7Hr1oTWqNqOlzGJOfGJ4NakVyIzf1rXYd4d7wo6jBlkLvCA4odBlL0mDUyZ0/QUfTTqeu+tm22gOsv+VrVTMk6vwRU75gY/y9ut5Mb3bR5BV58dKXyq9A9UeB5Cakehn5Zgm6x1mKoVyf+FFn26iYqXJRgzIZZcZ5V6hrE0Qg39kZm4az48o0AUbf6Sp4SLdvnuMa2sVNwHBboS7EJkm57XQPVU3/QpyNLHbWDdzwtrlS+ez30S3AdYhLKEOxAG8weOnyrtLJAUen9mTkol8oII1edf7mWWbWVf0nBmly21+nZcmCTISQBtdcyPaEno7fFQMDD26/s0lfKob4Kw8H
+  tls:
+    create: true
+  cmp:
+    create: false
+  secret:
+    createSecret: true
+controller:
+  name: application-controller
+  replicas: 1
+  dynamicClusterDistribution: false
+  heartbeatTime: 10
+  revisionHistoryLimit: 5
+  pdb:
+    enabled: false
+  vpa:
+    enabled: false
+    updateMode: Initial
+  containerPorts:
+    metrics: 8082
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+  readinessProbe:
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  terminationGracePeriodSeconds: 30
+  automountServiceAccountToken: true
+  serviceAccount:
+    create: true
+    name: argocd-application-controller
+    automountServiceAccountToken: true
+  metrics:
+    enabled: false
+    applicationLabels:
+      enabled: false
+    service:
+      type: ClusterIP
+      servicePort: 8082
+      portName: http-metrics
+    serviceMonitor:
+      enabled: false
+      interval: 30s
+      honorLabels: false
+    rules:
+      enabled: false
+  clusterRoleRules:
+    enabled: false
+  networkPolicy:
+    create: false
+dex:
+  enabled: true
+  name: dex-server
+  metrics:
+    enabled: false
+    service:
+      portName: http-metrics
+    serviceMonitor:
+      enabled: false
+      interval: 30s
+      honorLabels: false
+  pdb:
+    enabled: false
+  vpa:
+    enabled: false
+    updateMode: Initial
+  image:
+    repository: ghcr.io/dexidp/dex
+    tag: v2.45.1
+  certificateSecret:
+    enabled: false
+  containerPorts:
+    http: 5556
+    grpc: 5557
+    metrics: 5558
+  dnsPolicy: ClusterFirst
+  containerSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+  livenessProbe:
+    enabled: false
+    httpPath: "/healthz/live"
+    httpPort: metrics
+    httpScheme: HTTP
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  readinessProbe:
+    enabled: false
+    httpPath: "/healthz/ready"
+    httpPort: metrics
+    httpScheme: HTTP
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  terminationGracePeriodSeconds: 30
+  automountServiceAccountToken: true
+  serviceAccount:
+    create: true
+    name: argocd-dex-server
+    automountServiceAccountToken: true
+  servicePortHttp: 5556
+  servicePortHttpName: http
+  servicePortGrpc: 5557
+  servicePortGrpcName: grpc
+  servicePortMetrics: 5558
+  networkPolicy:
+    create: false
+redis:
+  enabled: true
+  name: redis
+  pdb:
+    enabled: false
+  vpa:
+    enabled: false
+    updateMode: Initial
+  image:
+    repository: ecr-public.aws.com/docker/library/redis
+    tag: 8.2.3-alpine
+  exporter:
+    enabled: false
+    image:
+      repository: ghcr.io/oliver006/redis_exporter
+      tag: v1.83.0
+    containerSecurityContext:
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+        - ALL
+    readinessProbe:
+      enabled: false
+      initialDelaySeconds: 30
+      periodSeconds: 15
+      timeoutSeconds: 15
+      successThreshold: 1
+      failureThreshold: 5
+    livenessProbe:
+      enabled: false
+      initialDelaySeconds: 30
+      periodSeconds: 15
+      timeoutSeconds: 15
+      successThreshold: 1
+      failureThreshold: 5
+  readinessProbe:
+    enabled: false
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 15
+    successThreshold: 1
+    failureThreshold: 5
+  livenessProbe:
+    enabled: false
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 15
+    successThreshold: 1
+    failureThreshold: 5
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    seccompProfile:
+      type: RuntimeDefault
+  containerPorts:
+    redis: 6379
+    metrics: 9121
+  dnsPolicy: ClusterFirst
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  servicePort: 6379
+  terminationGracePeriodSeconds: 30
+  automountServiceAccountToken: true
+  serviceAccount:
+    create: false
+    automountServiceAccountToken: false
+  metrics:
+    enabled: false
+    service:
+      type: ClusterIP
+      clusterIP: None
+      servicePort: 9121
+      portName: http-metrics
+    serviceMonitor:
+      enabled: false
+      interval: 30s
+      honorLabels: false
+  networkPolicy:
+    create: false
+redis-ha:
+  enabled: false
+  image:
+    repository: ecr-public.aws.com/docker/library/redis
+    tag: 8.2.3-alpine
+  exporter:
+    enabled: false
+    image: ghcr.io/oliver006/redis_exporter
+    tag: v1.75.0
+  persistentVolume:
+    enabled: false
+  redis:
+    masterGroupName: argocd
+    config:
+      save: '""'
+  haproxy:
+    enabled: true
+    labels:
+      app.kubernetes.io/name: argocd-redis-ha-haproxy
+    image:
+      repository: ecr-public.aws.com/docker/library/haproxy
+    metrics:
+      enabled: true
+    hardAntiAffinity: true
+    containerSecurityContext:
+      readOnlyRootFilesystem: true
+  auth: true
+  existingSecret: argocd-redis
+  hardAntiAffinity: true
+  topologySpreadConstraints:
+    enabled: false
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+externalRedis:
+  port: 6379
+redisSecretInit:
+  enabled: false
+  name: redis-secret-init
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccount:
+    create: true
+    automountServiceAccountToken: true
+server:
+  name: server
+  replicas: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50
+  pdb:
+    enabled: false
+  vpa:
+    enabled: false
+    updateMode: Initial
+  extensions:
+    enabled: false
+    image:
+      repository: quay.io/argoprojlabs/argocd-extension-installer
+      tag: v1.0.0
+    containerSecurityContext:
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      runAsUser: 1000
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+        - ALL
+  containerPorts:
+    server: 8080
+    metrics: 8083
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  terminationGracePeriodSeconds: 30
+  certificate:
+    enabled: false
+    privateKey:
+      rotationPolicy: Never
+      encoding: PKCS1
+      algorithm: RSA
+      size: 2048
+  certificateSecret:
+    enabled: false
+  service:
+    type: ClusterIP
+    nodePortHttp: 30080
+    nodePortHttps: 30443
+    servicePortHttp: 80
+    servicePortHttps: 443
+    servicePortHttpName: http
+    servicePortHttpsName: https
+    externalTrafficPolicy: Cluster
+    sessionAffinity: None
+  metrics:
+    enabled: false
+    service:
+      type: ClusterIP
+      servicePort: 8083
+      portName: http-metrics
+    serviceMonitor:
+      enabled: false
+      interval: 30s
+      honorLabels: false
+  automountServiceAccountToken: true
+  serviceAccount:
+    create: true
+    name: argocd-server
+    automountServiceAccountToken: true
+  ingress:
+    enabled: false
+    controller: generic
+    path: "/"
+    pathType: Prefix
+    tls: false
+    aws:
+      backendProtocolVersion: GRPC
+      serviceType: NodePort
+    gke:
+      managedCertificate:
+        create: true
+  ingressGrpc:
+    enabled: false
+    path: "/"
+    pathType: Prefix
+    tls: false
+  route:
+    enabled: false
+    termination_type: passthrough
+    termination_policy: None
+  httproute:
+    enabled: false
+    rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: "/"
+  grpcroute:
+    enabled: false
+    rules:
+    - matches:
+      - method:
+          type: Exact
+  backendTLSPolicy:
+    enabled: false
+  clusterRoleRules:
+    enabled: false
+  networkPolicy:
+    create: false
+repoServer:
+  name: repo-server
+  replicas: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50
+  pdb:
+    enabled: false
+  vpa:
+    enabled: false
+    updateMode: Initial
+  copyutil:
+    extraArgs: "--update=none"
+  useEphemeralHelmWorkingDir: true
+  containerPorts:
+    server: 8081
+    metrics: 8084
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  terminationGracePeriodSeconds: 30
+  certificateSecret:
+    enabled: false
+  service:
+    port: 8081
+    portName: tcp-repo-server
+  metrics:
+    enabled: false
+    service:
+      type: ClusterIP
+      servicePort: 8084
+      portName: http-metrics
+    serviceMonitor:
+      enabled: false
+      interval: 30s
+      honorLabels: false
+  clusterRoleRules:
+    enabled: false
+  automountServiceAccountToken: true
+  serviceAccount:
+    create: true
+    automountServiceAccountToken: true
+  networkPolicy:
+    create: false
+applicationSet:
+  name: applicationset-controller
+  replicas: 1
+  pdb:
+    enabled: false
+  vpa:
+    enabled: false
+    updateMode: Initial
+  metrics:
+    enabled: false
+    service:
+      type: ClusterIP
+      servicePort: 8080
+      portName: http-metrics
+    serviceMonitor:
+      enabled: false
+      interval: 30s
+      honorLabels: false
+  service:
+    type: ClusterIP
+    port: 7000
+    portName: http-webhook
+  automountServiceAccountToken: true
+  serviceAccount:
+    create: true
+    name: argocd-applicationset-controller
+    automountServiceAccountToken: true
+  containerPorts:
+    metrics: 8080
+    probe: 8081
+    webhook: 7000
+  dnsPolicy: ClusterFirst
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+  readinessProbe:
+    enabled: false
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 3
+  livenessProbe:
+    enabled: false
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 3
+  terminationGracePeriodSeconds: 30
+  certificate:
+    enabled: false
+    privateKey:
+      rotationPolicy: Never
+      encoding: PKCS1
+      algorithm: RSA
+      size: 2048
+  ingress:
+    enabled: false
+    path: "/api/webhook"
+    pathType: Prefix
+    tls: false
+  httproute:
+    enabled: false
+    rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: "/api/webhook"
+  allowAnyNamespace: false
+  networkPolicy:
+    create: false
+notifications:
+  enabled: true
+  name: notifications-controller
+  pdb:
+    enabled: false
+  vpa:
+    enabled: false
+    updateMode: Initial
+  secret:
+    create: true
+    name: argocd-notifications-secret
+  metrics:
+    enabled: false
+    port: 9001
+    service:
+      type: ClusterIP
+      portName: http-metrics
+    serviceMonitor:
+      enabled: false
+      honorLabels: false
+  containerPorts:
+    metrics: 9001
+  dnsPolicy: ClusterFirst
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+  readinessProbe:
+    enabled: false
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 3
+  livenessProbe:
+    enabled: false
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 3
+  terminationGracePeriodSeconds: 30
+  deploymentStrategy:
+    type: Recreate
+  automountServiceAccountToken: true
+  serviceAccount:
+    create: true
+    name: argocd-notifications-controller
+    automountServiceAccountToken: true
+  cm:
+    create: true
+  networkPolicy:
+    create: false
+commitServer:
+  enabled: false
+  name: commit-server
+  metrics:
+    enabled: false
+    service:
+      type: ClusterIP
+      servicePort: 8087
+      portName: metrics
+  service:
+    port: 8086
+    portName: server
+  automountServiceAccountToken: false
+  serviceAccount:
+    create: true
+    name: argocd-commit-server
+    automountServiceAccountToken: true
+  dnsPolicy: ClusterFirst
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    seccompProfile:
+      type: RuntimeDefault
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+  terminationGracePeriodSeconds: 30
+  networkPolicy:
+    create: false
+  vpa:
+    enabled: false
+    updateMode: Initial
