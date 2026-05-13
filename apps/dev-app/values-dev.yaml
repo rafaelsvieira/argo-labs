@@ -1,3 +1,4 @@
 appName: dev-app
+environment: dev
 namespace: development
 version: "1.27.5"
