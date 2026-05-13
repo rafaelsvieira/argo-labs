@@ -22,6 +22,7 @@ data:
             --muted: #9ec5df;
             --accent: #44d1ff;
             --accent-2: #7cf7c9;
+            --env-highlight: {{ if eq .Values.environment "prod" }}#ff6b6b{{ else }}#7cf7c9{{ end }};
             --warn: #ffcc66;
           }
 
@@ -87,8 +88,8 @@ data:
             display: inline-block;
             padding: 6px 10px;
             border-radius: 999px;
-            border: 1px solid rgba(124, 247, 201, 0.35);
-            color: var(--accent-2);
+            border: 1px solid var(--env-highlight);
+            color: var(--env-highlight);
             font-size: 0.76rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
@@ -164,7 +165,7 @@ data:
           }
 
           dt {
-            color: var(--accent-2);
+            color: var(--env-highlight);
           }
 
           dd {

@@ -1,4 +1,4 @@
-appName: dev-app
+appName: prod-app
 environment: prod
 namespace: production
-version: "1.27.5"
+version: "dev-1.0.0"
