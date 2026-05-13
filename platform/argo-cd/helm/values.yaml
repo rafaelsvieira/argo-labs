@@ -207,7 +207,7 @@ controller:
   networkPolicy:
     create: false
 dex:
-  enabled: true
+  enabled: false
   name: dex-server
   metrics:
     enabled: false
