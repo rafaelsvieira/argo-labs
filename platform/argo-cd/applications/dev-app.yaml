@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: first-argocd-demo-app
+  name: dev-app
   namespace: argo-cd-labs
 spec:
   project: default
@@ -9,7 +9,10 @@ spec:
   source:
     repoURL: https://github.com/rafaelsvieira/argo-labs
     targetRevision: main
-    path: apps/dev-app/manifests
+    path: apps/dev-app
+    helm:
+      valueFiles:
+        - values.yaml
 
   destination:
     server: https://kubernetes.default.svc

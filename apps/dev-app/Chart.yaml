@@ -1,0 +1,6 @@
+apiVersion: v2
+name: dev-app
+description: Demo app served by nginx for the argo-labs GitOps walkthrough
+type: application
+version: 0.1.0
+appVersion: "1.27.5"
