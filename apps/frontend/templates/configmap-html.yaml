@@ -118,6 +118,11 @@ data:
             gap: 18px;
           }
 
+          .stack {
+            display: grid;
+            gap: 18px;
+          }
+
           .card {
             padding: 20px;
             border-radius: 18px;
@@ -215,8 +220,33 @@ data:
           .prompt { color: var(--accent); }
           .warning { color: var(--warn); }
 
+          .history {
+            display: grid;
+            gap: 10px;
+          }
+
+          .history-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(3, 10, 18, 0.45);
+            border: 1px solid rgba(122, 203, 255, 0.12);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            font-size: 0.9rem;
+          }
+
+          .history-row span {
+            color: var(--muted);
+          }
+
           @media (max-width: 860px) {
             .layout {
+              grid-template-columns: 1fr;
+            }
+
+            .history-row {
               grid-template-columns: 1fr;
             }
           }
@@ -266,19 +296,28 @@ data:
                 </div>
               </article>
 
-              <article class="card">
-                <strong>Release Inputs</strong>
-                <dl>
-                  <dt>app-name</dt>
-                  <dd>{{ .Values.appName }}</dd>
-                  <dt>environment</dt>
-                  <dd>{{ .Values.environment }}</dd>
-                  <dt>namespace</dt>
-                  <dd>{{ .Values.namespace }}</dd>
-                  <dt>version</dt>
-                  <dd>{{ .Values.version }}</dd>
-                </dl>
-              </article>
+              <div class="stack">
+                <article class="card">
+                  <strong>Release Inputs</strong>
+                  <dl>
+                    <dt>app-name</dt>
+                    <dd>{{ .Values.appName }}</dd>
+                    <dt>environment</dt>
+                    <dd>{{ .Values.environment }}</dd>
+                    <dt>namespace</dt>
+                    <dd>{{ .Values.namespace }}</dd>
+                    <dt>version</dt>
+                    <dd>{{ .Values.version }}</dd>
+                  </dl>
+                </article>
+
+                <article class="card">
+                  <strong>Last 10 Samples</strong>
+                  <div id="history" class="history">
+                    <div class="subtle">No samples yet.</div>
+                  </div>
+                </article>
+              </div>
             </div>
 
             <div class="terminal" id="terminal">
@@ -298,11 +337,38 @@ data:
           const secondsEl = document.getElementById("seconds");
           const statusEl = document.getElementById("status");
           const terminalEl = document.getElementById("terminal");
+          const historyEl = document.getElementById("history");
+          const history = [];
 
           function log(line) {
             const entry = document.createElement("div");
             entry.textContent = line;
             terminalEl.prepend(entry);
+          }
+
+          function addHistory(data, label) {
+            history.unshift({
+              label,
+              count: data.count,
+              ttlSeconds: data.ttlSeconds,
+              windowSeconds: data.windowSeconds
+            });
+
+            if (history.length > 10) {
+              history.length = 10;
+            }
+
+            historyEl.innerHTML = "";
+
+            history.forEach((entry) => {
+              const row = document.createElement("div");
+              row.className = "history-row";
+              row.innerHTML =
+                `<span>${entry.label}</span>` +
+                `<span>count=${entry.count} ttl=${entry.ttlSeconds}s</span>` +
+                `<span>window=${entry.windowSeconds}s</span>`;
+              historyEl.appendChild(row);
+            });
           }
 
           async function fetchState() {
@@ -316,13 +382,17 @@ data:
           function renderState(data) {
             countEl.textContent = data.count;
             timerEl.textContent = `Window expires in ${data.ttlSeconds}s`;
-            secondsEl.value = data.windowSeconds;
+
+            if (document.activeElement !== secondsEl) {
+              secondsEl.value = data.windowSeconds;
+            }
           }
 
           async function refreshState(label = "poll") {
             try {
               const data = await fetchState();
               renderState(data);
+              addHistory(data, label);
               statusEl.textContent = `Window ${data.windowSeconds}s · count ${data.count}`;
               log(`[${label}] count=${data.count} ttl=${data.ttlSeconds}s window=${data.windowSeconds}s`);
             } catch (error) {
@@ -335,6 +405,7 @@ data:
             const response = await fetch("/api/click", { method: "POST" });
             const data = await response.json();
             renderState(data);
+            addHistory(data, "click");
             statusEl.textContent = `Count incremented to ${data.count}`;
             log(`[click] count=${data.count} ttl=${data.ttlSeconds}s`);
           }
