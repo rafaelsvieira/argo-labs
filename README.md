@@ -21,7 +21,7 @@ A hands-on lab for learning **ArgoCD** and **Argo Rollouts** on a local Kubernet
 - [x] 03 — [First "Hello GitOps" sync](blog/03-first-gitops-sync.md)
 
 ### Phase 2 — GitOps patterns
-- [ ] 04 — App-of-Apps vs ApplicationSets
+- [x] 04 — [App-of-Apps vs ApplicationSets](blog/04-app-of-apps-and-applicationsets.md)
 - [ ] 05 — Sync waves, hooks, health checks
 - [ ] 06 — Secrets in GitOps (sealed-secrets or SOPS)
 
@@ -40,3 +40,4 @@ A hands-on lab for learning **ArgoCD** and **Argo Rollouts** on a local Kubernet
 1. [Bootstrapping a kind cluster for the argo-labs](blog/01-bootstrapping-kind.md)
 2. [Installing ArgoCD on kind with Helm](blog/02-installing-argocd.md)
 3. [First GitOps sync with ArgoCD](blog/03-first-gitops-sync.md)
+4. [App-of-Apps and ApplicationSets](blog/04-app-of-apps-and-applicationsets.md)
