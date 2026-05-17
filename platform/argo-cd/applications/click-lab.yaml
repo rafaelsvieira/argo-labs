@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: dev-apps
+  name: click-lab
   namespace: argo-cd-labs
 spec:
   goTemplate: true
@@ -12,7 +12,8 @@ spec:
         repoURL: https://github.com/rafaelsvieira/argo-labs
         revision: main
         files:
-          - path: apps/dev-app/values-*.yaml
+          - path: apps/backend/values-*.yaml
+          - path: apps/frontend/values-*.yaml
 
   template:
     metadata:

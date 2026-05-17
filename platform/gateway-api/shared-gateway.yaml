@@ -9,7 +9,7 @@ metadata:
   name: shared-gateway
   namespace: gateway-system
 spec:
-  gatewayClassName: nginx
+  gatewayClassName: cloud-provider-kind
   listeners:
     - name: http
       protocol: HTTP
