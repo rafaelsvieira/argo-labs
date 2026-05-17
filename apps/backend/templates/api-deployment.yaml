@@ -32,8 +32,7 @@ spec:
             - containerPort: 8000
           volumeMounts:
             - name: api-script
-              mountPath: /app/server.py
-              subPath: server.py
+              mountPath: /app
       volumes:
         - name: api-script
           configMap:
