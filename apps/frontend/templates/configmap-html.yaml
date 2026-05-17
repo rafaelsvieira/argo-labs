@@ -205,19 +205,6 @@ data:
           dt { color: var(--env-highlight); }
           dd { margin: 0; }
 
-          .terminal {
-            padding: 18px;
-            border-radius: 18px;
-            background: #05101c;
-            border: 1px solid rgba(68, 209, 255, 0.18);
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-            color: #d9f3ff;
-            overflow-x: auto;
-            font-size: 0.93rem;
-            line-height: 1.65;
-          }
-
-          .prompt { color: var(--accent); }
           .warning { color: var(--warn); }
 
           .history {
@@ -312,16 +299,12 @@ data:
                 </article>
 
                 <article class="card">
-                  <strong>Last 10 Samples</strong>
+                  <strong>Last 5 Samples</strong>
                   <div id="history" class="history">
                     <div class="subtle">No samples yet.</div>
                   </div>
                 </article>
               </div>
-            </div>
-
-            <div class="terminal" id="terminal">
-              <div><span class="prompt">$</span> frontend is waiting for /api/state</div>
             </div>
 
             <div class="warning">
@@ -336,15 +319,8 @@ data:
           const timerEl = document.getElementById("timer");
           const secondsEl = document.getElementById("seconds");
           const statusEl = document.getElementById("status");
-          const terminalEl = document.getElementById("terminal");
           const historyEl = document.getElementById("history");
           const history = [];
-
-          function log(line) {
-            const entry = document.createElement("div");
-            entry.textContent = line;
-            terminalEl.prepend(entry);
-          }
 
           function addHistory(data, label) {
             history.unshift({
@@ -354,8 +330,8 @@ data:
               windowSeconds: data.windowSeconds
             });
 
-            if (history.length > 10) {
-              history.length = 10;
+            if (history.length > 5) {
+              history.length = 5;
             }
 
             historyEl.innerHTML = "";
@@ -394,10 +370,8 @@ data:
               renderState(data);
               addHistory(data, label);
               statusEl.textContent = `Window ${data.windowSeconds}s · count ${data.count}`;
-              log(`[${label}] count=${data.count} ttl=${data.ttlSeconds}s window=${data.windowSeconds}s`);
             } catch (error) {
               statusEl.textContent = "Backend unavailable";
-              log(`[error] ${error.message}`);
             }
           }
 
@@ -407,7 +381,6 @@ data:
             renderState(data);
             addHistory(data, "click");
             statusEl.textContent = `Count incremented to ${data.count}`;
-            log(`[click] count=${data.count} ttl=${data.ttlSeconds}s`);
           }
 
           async function updateWindow() {
@@ -420,11 +393,9 @@ data:
             const data = await response.json();
             if (!response.ok) {
               statusEl.textContent = data.error || "Failed to set window";
-              log(`[window:error] ${data.error || "unknown error"}`);
               return;
             }
             statusEl.textContent = `Window updated to ${data.windowSeconds}s`;
-            log(`[window] set=${data.windowSeconds}s`);
             refreshState("window-refresh");
           }
 
