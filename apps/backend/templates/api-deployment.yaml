@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "backend.name" . }}-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ include "backend.name" . }}-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "backend.name" . }}-api
+  template:
+    metadata:
+      labels:
+        app: {{ include "backend.name" . }}-api
+    spec:
+      containers:
+        - name: api
+          image: python:3.12-alpine
+          command:
+            - python
+            - /app/server.py
+          env:
+            - name: REDIS_HOST
+              value: {{ include "backend.name" . }}-redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: DEFAULT_WINDOW_SECONDS
+              value: "{{ .Values.defaultWindowSeconds }}"
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: api-script
+              mountPath: /app/server.py
+              subPath: server.py
+      volumes:
+        - name: api-script
+          configMap:
+            name: {{ include "backend.name" . }}-api

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "backend.name" . }}-redis
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ include "backend.name" . }}-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "backend.name" . }}-redis
+  template:
+    metadata:
+      labels:
+        app: {{ include "backend.name" . }}-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379

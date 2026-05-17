@@ -1,0 +1,6 @@
+apiVersion: v2
+name: backend
+description: Python backend and Redis counter service for argo-labs
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

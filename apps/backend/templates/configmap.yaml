@@ -1,0 +1,183 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "backend.name" . }}-api
+  namespace: {{ .Values.namespace }}
+data:
+  server.py: |
+    import json
+    import os
+    import socket
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+    REDIS_HOST = os.environ.get("REDIS_HOST", "backend-redis")
+    REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
+    DEFAULT_WINDOW_SECONDS = int(os.environ.get("DEFAULT_WINDOW_SECONDS", "{{ .Values.defaultWindowSeconds }}"))
+
+    COUNT_KEY = "click-counter:value"
+    WINDOW_KEY = "click-counter:window-seconds"
+
+
+    class RedisClient:
+        def __init__(self, host, port):
+            self.host = host
+            self.port = port
+
+        def _command(self, *parts):
+            payload = f"*{len(parts)}\r\n".encode()
+            for part in parts:
+                encoded = str(part).encode()
+                payload += f"${len(encoded)}\r\n".encode() + encoded + b"\r\n"
+
+            with socket.create_connection((self.host, self.port), timeout=2) as conn:
+                conn.sendall(payload)
+                return self._read(conn)
+
+        def _read_line(self, conn):
+            data = b""
+            while not data.endswith(b"\r\n"):
+              chunk = conn.recv(1)
+              if not chunk:
+                raise RuntimeError("unexpected redis connection close")
+              data += chunk
+            return data[:-2]
+
+        def _read(self, conn):
+            prefix = conn.recv(1)
+            if not prefix:
+                raise RuntimeError("empty redis response")
+
+            if prefix == b"+":
+                return self._read_line(conn).decode()
+
+            if prefix == b":":
+                return int(self._read_line(conn))
+
+            if prefix == b"$":
+                length = int(self._read_line(conn))
+                if length == -1:
+                    return None
+                data = b""
+                while len(data) < length:
+                    data += conn.recv(length - len(data))
+                conn.recv(2)
+                return data.decode()
+
+            if prefix == b"-":
+                raise RuntimeError(self._read_line(conn).decode())
+
+            raise RuntimeError(f"unsupported redis response prefix: {prefix!r}")
+
+        def get(self, key):
+            return self._command("GET", key)
+
+        def set(self, key, value):
+            return self._command("SET", key, value)
+
+        def incr(self, key):
+            return self._command("INCR", key)
+
+        def expire(self, key, seconds):
+            return self._command("EXPIRE", key, seconds)
+
+        def ttl(self, key):
+            return self._command("TTL", key)
+
+
+    redis = RedisClient(REDIS_HOST, REDIS_PORT)
+
+
+    def current_window():
+        value = redis.get(WINDOW_KEY)
+        if value is None:
+            redis.set(WINDOW_KEY, DEFAULT_WINDOW_SECONDS)
+            return DEFAULT_WINDOW_SECONDS
+        return int(value)
+
+
+    def set_window(seconds):
+        redis.set(WINDOW_KEY, seconds)
+        ttl = redis.ttl(COUNT_KEY)
+        if ttl > 0:
+            redis.expire(COUNT_KEY, seconds)
+        return seconds
+
+
+    def click():
+        window = current_window()
+        count = redis.incr(COUNT_KEY)
+        redis.expire(COUNT_KEY, window)
+        return {
+            "count": count,
+            "windowSeconds": window,
+            "ttlSeconds": window,
+        }
+
+
+    def state():
+        window = current_window()
+        count = redis.get(COUNT_KEY)
+        ttl = redis.ttl(COUNT_KEY)
+        return {
+            "count": int(count) if count is not None else 0,
+            "windowSeconds": window,
+            "ttlSeconds": ttl if ttl > 0 else 0,
+        }
+
+
+    class Handler(BaseHTTPRequestHandler):
+        def _json(self, status, payload):
+            body = json.dumps(payload).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _read_json(self):
+            length = int(self.headers.get("Content-Length", "0"))
+            raw = self.rfile.read(length) if length else b"{}"
+            return json.loads(raw.decode() or "{}")
+
+        def do_GET(self):
+            if self.path == "/healthz":
+                self._json(200, {"status": "ok"})
+                return
+
+            if self.path == "/api/state":
+                self._json(200, state())
+                return
+
+            self._json(404, {"error": "not found"})
+
+        def do_POST(self):
+            if self.path == "/api/click":
+                self._json(200, click())
+                return
+
+            if self.path == "/api/window":
+                payload = self._read_json()
+                try:
+                    seconds = int(payload.get("seconds", 0))
+                except (TypeError, ValueError):
+                    self._json(400, {"error": "seconds must be an integer"})
+                    return
+
+                if seconds <= 0:
+                    self._json(400, {"error": "seconds must be greater than zero"})
+                    return
+
+                self._json(200, {"windowSeconds": set_window(seconds)})
+                return
+
+            self._json(404, {"error": "not found"})
+
+        def log_message(self, fmt, *args):
+            return
+
+
+    if __name__ == "__main__":
+        server = HTTPServer(("0.0.0.0", 8000), Handler)
+        server.serve_forever()

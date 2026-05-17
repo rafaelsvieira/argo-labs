@@ -1,0 +1,11 @@
+appName: frontend
+environment: dev
+namespace: click-lab-dev
+version: "frontend-dev-1.0.0"
+backendServiceName: backend-api
+defaultWindowSeconds: 15
+gateway:
+  enabled: true
+  name: shared-gateway
+  namespace: gateway-system
+  host: frontend-dev.localtest.me
