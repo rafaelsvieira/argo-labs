@@ -9,3 +9,4 @@ gateway:
   name: shared-gateway
   namespace: gateway-system
   host: frontend-dev.localtest.me
+  httpsRedirectPort: 8443

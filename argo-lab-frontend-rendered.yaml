@@ -1,0 +1,537 @@
+---
+# Source: frontend/templates/configmap-html.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-content
+  namespace: click-lab-dev
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>frontend · argo-labs</title>
+        <style>
+          :root {
+            color-scheme: light;
+            --bg-top: #07111f;
+            --bg-bottom: #0f2b46;
+            --panel: rgba(7, 17, 31, 0.74);
+            --line: rgba(122, 203, 255, 0.24);
+            --text: #e8f4ff;
+            --muted: #9ec5df;
+            --accent: #44d1ff;
+            --accent-2: #7cf7c9;
+            --env-highlight: #7cf7c9;
+            --warn: #ffcc66;
+            --button: #44d1ff;
+            --button-text: #04101e;
+          }
+
+          * { box-sizing: border-box; }
+
+          body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+              radial-gradient(circle at top left, rgba(68, 209, 255, 0.2), transparent 30%),
+              radial-gradient(circle at bottom right, rgba(124, 247, 201, 0.16), transparent 28%),
+              linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+            display: grid;
+            place-items: center;
+            padding: 24px;
+          }
+
+          .shell {
+            width: min(1040px, 100%);
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+            backdrop-filter: blur(12px);
+          }
+
+          .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.03);
+          }
+
+          .dot { width: 11px; height: 11px; border-radius: 50%; }
+          .dot.red { background: #ff6b6b; }
+          .dot.yellow { background: #ffd166; }
+          .dot.green { background: #7cf7c9; }
+
+          .title {
+            margin-left: 10px;
+            font-size: 0.95rem;
+            color: var(--muted);
+            letter-spacing: 0.04em;
+          }
+
+          .content {
+            padding: 40px 28px 32px;
+            display: grid;
+            gap: 24px;
+          }
+
+          .hero {
+            display: grid;
+            gap: 14px;
+          }
+
+          .eyebrow {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--env-highlight);
+            color: var(--env-highlight);
+            font-size: 0.76rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            width: fit-content;
+          }
+
+          h1 {
+            margin: 0;
+            font-size: clamp(2.2rem, 6vw, 4.2rem);
+            line-height: 0.95;
+          }
+
+          p {
+            margin: 0;
+            max-width: 68ch;
+            color: var(--muted);
+            font-size: 1.02rem;
+            line-height: 1.7;
+          }
+
+          .layout {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 18px;
+          }
+
+          .stack {
+            display: grid;
+            gap: 18px;
+          }
+
+          .card {
+            padding: 20px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(158, 197, 223, 0.15);
+          }
+
+          .card strong {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1rem;
+          }
+
+          .metric {
+            font-size: clamp(2.1rem, 6vw, 3.6rem);
+            font-weight: 700;
+            margin-bottom: 8px;
+          }
+
+          .subtle {
+            color: var(--muted);
+            font-size: 0.94rem;
+          }
+
+          .controls {
+            display: grid;
+            gap: 14px;
+          }
+
+          label {
+            display: grid;
+            gap: 8px;
+            font-size: 0.94rem;
+            color: var(--muted);
+          }
+
+          input {
+            width: 100%;
+            padding: 14px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(122, 203, 255, 0.25);
+            background: rgba(3, 10, 18, 0.55);
+            color: var(--text);
+            font-size: 1rem;
+          }
+
+          .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+          }
+
+          button {
+            border: 0;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 0.98rem;
+            font-weight: 700;
+            cursor: pointer;
+          }
+
+          .primary {
+            background: var(--button);
+            color: var(--button-text);
+          }
+
+          .secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            border: 1px solid rgba(158, 197, 223, 0.15);
+          }
+
+          dl {
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: 8px 14px;
+            margin: 0;
+          }
+
+          dt { color: var(--env-highlight); }
+          dd { margin: 0; }
+
+          .warning { color: var(--warn); }
+
+          .history {
+            display: grid;
+            gap: 10px;
+          }
+
+          .history-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(3, 10, 18, 0.45);
+            border: 1px solid rgba(122, 203, 255, 0.12);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            font-size: 0.9rem;
+          }
+
+          .history-row span {
+            color: var(--muted);
+          }
+
+          @media (max-width: 860px) {
+            .layout {
+              grid-template-columns: 1fr;
+            }
+
+            .history-row {
+              grid-template-columns: 1fr;
+            }
+          }
+
+          @media (max-width: 640px) {
+            .content {
+              padding: 28px 20px 24px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <main class="shell">
+          <div class="topbar">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+            <span class="title">argo-labs / frontend</span>
+          </div>
+
+          <section class="content">
+            <div class="hero">
+              <span class="eyebrow">GitOps Lab</span>
+              <h1>Click, hold, expire.</h1>
+              <p>
+                This frontend talks to a Python API backed by Redis. Every click increments the
+                counter, and each new request refreshes the countdown window so Redis controls when
+                the count disappears.
+              </p>
+            </div>
+
+            <div class="layout">
+              <article class="card">
+                <strong>Live Counter</strong>
+                <div id="count" class="metric">0</div>
+                <div id="timer" class="subtle">Window expires in 0s</div>
+                <div class="controls" style="margin-top: 18px;">
+                  <label>
+                    Counting window in seconds
+                    <input id="seconds" type="number" min="1" value="15" />
+                  </label>
+                  <div class="actions">
+                    <button id="save-window" class="secondary" type="button">Set Window</button>
+                    <button id="click-button" class="primary" type="button">Count Click</button>
+                  </div>
+                  <div id="status" class="subtle">Waiting for backend state...</div>
+                </div>
+              </article>
+
+              <div class="stack">
+                <article class="card">
+                  <strong>Release Inputs</strong>
+                  <dl>
+                    <dt>app-name</dt>
+                    <dd>frontend</dd>
+                    <dt>environment</dt>
+                    <dd>dev</dd>
+                    <dt>namespace</dt>
+                    <dd>click-lab-dev</dd>
+                    <dt>version</dt>
+                    <dd>frontend-dev-1.0.0</dd>
+                  </dl>
+                </article>
+
+                <article class="card">
+                  <strong>Last 5 Samples</strong>
+                  <div id="history" class="history">
+                    <div class="subtle">No samples yet.</div>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <div class="warning">
+              Every new count request resets the expiration window. If nobody clicks before the timer
+              runs out, Redis expires the key and the count returns to zero.
+            </div>
+          </section>
+        </main>
+
+        <script>
+          const countEl = document.getElementById("count");
+          const timerEl = document.getElementById("timer");
+          const secondsEl = document.getElementById("seconds");
+          const statusEl = document.getElementById("status");
+          const historyEl = document.getElementById("history");
+          const history = [];
+
+          function addHistory(data, label) {
+            history.unshift({
+              label,
+              count: data.count,
+              ttlSeconds: data.ttlSeconds,
+              windowSeconds: data.windowSeconds
+            });
+
+            if (history.length > 5) {
+              history.length = 5;
+            }
+
+            historyEl.innerHTML = "";
+
+            history.forEach((entry) => {
+              const row = document.createElement("div");
+              row.className = "history-row";
+              row.innerHTML =
+                `<span>${entry.label}</span>` +
+                `<span>count=${entry.count} ttl=${entry.ttlSeconds}s</span>` +
+                `<span>window=${entry.windowSeconds}s</span>`;
+              historyEl.appendChild(row);
+            });
+          }
+
+          async function fetchState() {
+            const response = await fetch("/api/state");
+            if (!response.ok) {
+              throw new Error("failed to load state");
+            }
+            return response.json();
+          }
+
+          function renderState(data) {
+            countEl.textContent = data.count;
+            timerEl.textContent = `Window expires in ${data.ttlSeconds}s`;
+
+            if (document.activeElement !== secondsEl) {
+              secondsEl.value = data.windowSeconds;
+            }
+          }
+
+          async function refreshState(label = "poll") {
+            try {
+              const data = await fetchState();
+              renderState(data);
+              addHistory(data, label);
+              statusEl.textContent = `Window ${data.windowSeconds}s · count ${data.count}`;
+            } catch (error) {
+              statusEl.textContent = "Backend unavailable";
+            }
+          }
+
+          async function clickCount() {
+            const response = await fetch("/api/click", { method: "POST" });
+            const data = await response.json();
+            renderState(data);
+            addHistory(data, "click");
+            statusEl.textContent = `Count incremented to ${data.count}`;
+          }
+
+          async function updateWindow() {
+            const seconds = Number(secondsEl.value);
+            const response = await fetch("/api/window", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ seconds })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+              statusEl.textContent = data.error || "Failed to set window";
+              return;
+            }
+            statusEl.textContent = `Window updated to ${data.windowSeconds}s`;
+            refreshState("window-refresh");
+          }
+
+          document.getElementById("click-button").addEventListener("click", clickCount);
+          document.getElementById("save-window").addEventListener("click", updateWindow);
+
+          refreshState("initial");
+          setInterval(() => refreshState("poll"), 1000);
+        </script>
+      </body>
+    </html>
+---
+# Source: frontend/templates/configmap-nginx.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nginx
+  namespace: click-lab-dev
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+
+      root /usr/share/nginx/html;
+      index index.html;
+
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+
+      location /api/ {
+        proxy_pass http://backend-api:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+    }
+---
+# Source: frontend/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: click-lab-dev
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+# Source: frontend/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: click-lab-dev
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: html
+          configMap:
+            name: frontend-content
+        - name: nginx-config
+          configMap:
+            name: frontend-nginx
+---
+# Source: frontend/templates/httproute.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: frontend-redirect
+  namespace: click-lab-dev
+spec:
+  parentRefs:
+    - name: shared-gateway
+      namespace: gateway-system
+      sectionName: http
+  hostnames:
+    - "frontend-dev.localtest.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            port: 8443
+            statusCode: 301
+---
+# Source: frontend/templates/httproute.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: frontend
+  namespace: click-lab-dev
+spec:
+  parentRefs:
+    - name: shared-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - "frontend-dev.localtest.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: frontend
+          port: 80
