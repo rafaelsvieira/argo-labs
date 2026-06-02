@@ -3,3 +3,4 @@ environment: dev
 namespace: click-lab-dev
 version: "backend-dev-1.0.0"
 defaultWindowSeconds: 15
+maintenanceWindowSeconds: 120

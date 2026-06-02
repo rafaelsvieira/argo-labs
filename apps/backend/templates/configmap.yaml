@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "backend.name" . }}-api
-  namespace: {{ .Values.namespace }}
+  name: "{{ include backend.name . }}-api"
+  namespace: "{{ .Values.namespace }}"
 data:
   server.py: |
     import json
@@ -17,6 +17,7 @@ data:
 
     COUNT_KEY = "click-counter:value"
     WINDOW_KEY = "click-counter:window-seconds"
+    MAINTENANCE_KEY = "click-counter:maintenance"
 
 
     class RedisClient:
@@ -88,6 +89,16 @@ data:
     redis = RedisClient(REDIS_HOST, REDIS_PORT)
 
 
+    def maintenance_state():
+        message = redis.get(MAINTENANCE_KEY)
+        ttl = redis.ttl(MAINTENANCE_KEY)
+        return {
+            "active": message is not None,
+            "message": message or "",
+            "ttlSeconds": ttl if ttl > 0 else 0,
+        }
+
+
     def current_window():
         value = redis.get(WINDOW_KEY)
         if value is None:
@@ -97,14 +108,22 @@ data:
 
 
     def set_window(seconds):
+        maintenance = maintenance_state()
+        if maintenance["active"]:
+            return None, maintenance
+
         redis.set(WINDOW_KEY, seconds)
         ttl = redis.ttl(COUNT_KEY)
         if ttl > 0:
             redis.expire(COUNT_KEY, seconds)
-        return seconds
+        return seconds, maintenance
 
 
     def click():
+        maintenance = maintenance_state()
+        if maintenance["active"]:
+            return None, maintenance
+
         window = current_window()
         count = redis.incr(COUNT_KEY)
         redis.expire(COUNT_KEY, window)
@@ -112,7 +131,8 @@ data:
             "count": count,
             "windowSeconds": window,
             "ttlSeconds": window,
-        }
+            "maintenance": maintenance,
+        }, maintenance
 
 
     def state():
@@ -123,6 +143,7 @@ data:
             "count": int(count) if count is not None else 0,
             "windowSeconds": window,
             "ttlSeconds": ttl if ttl > 0 else 0,
+            "maintenance": maintenance_state(),
         }
 
 
@@ -154,7 +175,16 @@ data:
 
         def do_POST(self):
             if self.path == "/api/click":
-                self._json(200, click())
+                payload, maintenance = click()
+                if maintenance["active"]:
+                    self._json(503, {
+                        "error": "maintenance window active",
+                        "maintenance": maintenance,
+                        **state(),
+                    })
+                    return
+
+                self._json(200, payload)
                 return
 
             if self.path == "/api/window":
@@ -169,7 +199,16 @@ data:
                     self._json(400, {"error": "seconds must be greater than zero"})
                     return
 
-                self._json(200, {"windowSeconds": set_window(seconds)})
+                window, maintenance = set_window(seconds)
+                if maintenance["active"]:
+                    self._json(503, {
+                        "error": "maintenance window active",
+                        "maintenance": maintenance,
+                        **state(),
+                    })
+                    return
+
+                self._json(200, state())
                 return
 
             self._json(404, {"error": "not found"})

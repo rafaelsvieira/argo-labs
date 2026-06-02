@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "frontend.name" . }}-content
-  namespace: {{ .Values.namespace }}
+  name: "{{ include frontend.name . }}-content"
+  namespace: "{{ .Values.namespace }}"
 data:
   index.html: |
     <!DOCTYPE html>
@@ -184,6 +184,12 @@ data:
             cursor: pointer;
           }
 
+          button:disabled,
+          input:disabled {
+            cursor: not-allowed;
+            opacity: 0.56;
+          }
+
           .primary {
             background: var(--button);
             color: var(--button-text);
@@ -206,6 +212,20 @@ data:
           dd { margin: 0; }
 
           .warning { color: var(--warn); }
+
+          .maintenance {
+            display: none;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 204, 102, 0.4);
+            background: rgba(255, 204, 102, 0.12);
+            color: var(--warn);
+            font-weight: 700;
+          }
+
+          .maintenance.active {
+            display: block;
+          }
 
           .history {
             display: grid;
@@ -265,6 +285,8 @@ data:
               </p>
             </div>
 
+            <div id="maintenance" class="maintenance"></div>
+
             <div class="layout">
               <article class="card">
                 <strong>Live Counter</strong>
@@ -320,6 +342,9 @@ data:
           const secondsEl = document.getElementById("seconds");
           const statusEl = document.getElementById("status");
           const historyEl = document.getElementById("history");
+          const maintenanceEl = document.getElementById("maintenance");
+          const clickButton = document.getElementById("click-button");
+          const saveWindowButton = document.getElementById("save-window");
           const history = [];
 
           function addHistory(data, label) {
@@ -362,6 +387,20 @@ data:
             if (document.activeElement !== secondsEl) {
               secondsEl.value = data.windowSeconds;
             }
+
+            const maintenance = data.maintenance || { active: false };
+            clickButton.disabled = maintenance.active;
+            saveWindowButton.disabled = maintenance.active;
+            secondsEl.disabled = maintenance.active;
+
+            if (maintenance.active) {
+              maintenanceEl.classList.add("active");
+              maintenanceEl.textContent =
+                `${maintenance.message} ${maintenance.ttlSeconds}s remaining.`;
+            } else {
+              maintenanceEl.classList.remove("active");
+              maintenanceEl.textContent = "";
+            }
           }
 
           async function refreshState(label = "poll") {
@@ -380,7 +419,9 @@ data:
             const data = await response.json();
             renderState(data);
             addHistory(data, "click");
-            statusEl.textContent = `Count incremented to ${data.count}`;
+            statusEl.textContent = response.ok
+              ? `Count incremented to ${data.count}`
+              : data.error || "Counting is paused";
           }
 
           async function updateWindow() {
@@ -391,6 +432,7 @@ data:
               body: JSON.stringify({ seconds })
             });
             const data = await response.json();
+            renderState(data);
             if (!response.ok) {
               statusEl.textContent = data.error || "Failed to set window";
               return;
@@ -399,8 +441,8 @@ data:
             refreshState("window-refresh");
           }
 
-          document.getElementById("click-button").addEventListener("click", clickCount);
-          document.getElementById("save-window").addEventListener("click", updateWindow);
+          clickButton.addEventListener("click", clickCount);
+          saveWindowButton.addEventListener("click", updateWindow);
 
           refreshState("initial");
           setInterval(() => refreshState("poll"), 1000);
