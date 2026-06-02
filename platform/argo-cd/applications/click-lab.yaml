@@ -8,26 +8,36 @@ spec:
   goTemplateOptions:
     - missingkey=error
   generators:
-    - git:
-        repoURL: https://github.com/rafaelsvieira/argo-labs
-        revision: main
-        files:
-          - path: apps/backend/values-*.yaml
-          - path: apps/frontend/values-*.yaml
+    - list:
+        elements:
+          - environment: dev
+            namespace: click-lab-dev
+            targetRevision: develop
+          - environment: prod
+            namespace: click-lab-prod
+            targetRevision: main
 
   template:
     metadata:
-      name: "{{ .appName }}-{{ .environment }}"
+      name: "click-lab-{{ .environment }}"
+      labels:
+        app.kubernetes.io/part-of: click-lab
+        environment: "{{ .environment }}"
     spec:
       project: default
-      source:
-        repoURL: https://github.com/rafaelsvieira/argo-labs
-        targetRevision: main
-        path: "apps/{{ index .path.segments 1 }}"
-        helm:
-          valueFiles:
-            - "{{ .path.filename }}"
-          releaseName: "{{ .appName }}"
+      sources:
+        - repoURL: https://github.com/rafaelsvieira/argo-labs
+          targetRevision: "{{ .targetRevision }}"
+          path: "apps/backend/"
+          helm:
+            valueFiles:
+            - "values-{{ .environment }}.yaml"
+        - repoURL: https://github.com/rafaelsvieira/argo-labs
+          targetRevision: "{{ .targetRevision }}"
+          path: "apps/frontend/"
+          helm:
+            valueFiles:
+            - "values-{{ .environment }}.yaml"
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{ .namespace }}"

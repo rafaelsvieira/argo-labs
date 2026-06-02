@@ -1,0 +1,5 @@
+appName: backend
+environment: prod
+namespace: click-lab-prod
+version: "backend-prod-1.0.0"
+defaultWindowSeconds: 60
