@@ -29,3 +29,5 @@ charts/
 .scratch/
 tmp/
 .local/
+
+.venv/

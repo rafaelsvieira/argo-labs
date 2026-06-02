@@ -11,3 +11,6 @@ fi
 
 echo "Deleting kind cluster '${CLUSTER_NAME}'..."
 kind delete cluster --name "${CLUSTER_NAME}"
+
+docker stop cloud-provider-kind >/dev/null 2>&1 || true
+echo "Cluster '${CLUSTER_NAME}' has been deleted!"

@@ -398,7 +398,7 @@ redis-ha:
 externalRedis:
   port: 6379
 redisSecretInit:
-  enabled: false
+  enabled: true
   name: redis-secret-init
   containerSecurityContext:
     allowPrivilegeEscalation: false
