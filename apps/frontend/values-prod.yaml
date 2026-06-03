@@ -9,3 +9,5 @@ gateway:
   name: shared-gateway
   namespace: gateway-system
   host: frontend-prod.localtest.me
+frontend:
+  name: click-lab-frontend

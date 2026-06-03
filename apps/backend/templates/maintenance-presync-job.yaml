@@ -1,8 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ include backend.name . }}-maintenance-presync"
-  namespace: "{{ .Values.namespace }}"
+  name: {{ include "backend.name" . }}-maintenance-presync
+  namespace: {{ .Values.namespace }}
   annotations:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
@@ -16,7 +16,7 @@ spec:
           image: redis:7-alpine
           env:
             - name: REDIS_HOST
-              value: "{{ include backend.name . }}-redis"
+              value: {{ include "backend.name" . }}-redis
             - name: MAINTENANCE_SECONDS
               value: "{{ .Values.maintenanceWindowSeconds }}"
             - name: MAINTENANCE_MESSAGE
@@ -26,12 +26,14 @@ spec:
             - -c
             - |
               set -eu
+              echo "Waiting for Redis to be available at ${REDIS_HOST} before setting maintenance flag..."
               for attempt in $(seq 1 30); do
                 if redis-cli -h "${REDIS_HOST}" ping >/dev/null 2>&1; then
                   redis-cli -h "${REDIS_HOST}" set click-counter:maintenance "${MAINTENANCE_MESSAGE}" ex "${MAINTENANCE_SECONDS}"
                   echo "Maintenance flag set for ${MAINTENANCE_SECONDS}s"
                   exit 0
                 fi
+                echo "Attempt ${attempt}: Redis is not reachable yet; retrying in 2 seconds..."
                 sleep 2
               done
 

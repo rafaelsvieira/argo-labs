@@ -5,7 +5,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HELM_VALUES_FILE="${REPO_ROOT}/platform/argo-cd/helm/values.yaml"
 HELM_CHART_NAME="argo/argo-cd"
 ARGO_NAMESPACE="argo-cd-labs"
-CHART_VERSION="9.5.14"
+CHART_VERSION="9.5.20"
 
 if [[ ! -f "${HELM_VALUES_FILE}" ]]; then
   echo "Values file not found: ${HELM_VALUES_FILE}" >&2

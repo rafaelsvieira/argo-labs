@@ -4,3 +4,5 @@ namespace: click-lab-prod
 version: "backend-prod-1.0.0"
 defaultWindowSeconds: 60
 maintenanceWindowSeconds: 300
+backend:
+  name: click-lab-backend

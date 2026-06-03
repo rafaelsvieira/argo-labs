@@ -10,9 +10,9 @@ spec:
   generators:
     - list:
         elements:
-          - environment: dev
-            namespace: click-lab-dev
-            targetRevision: develop
+          # - environment: dev
+          #   namespace: click-lab-dev
+          #   targetRevision: develop
           - environment: prod
             namespace: click-lab-prod
             targetRevision: main

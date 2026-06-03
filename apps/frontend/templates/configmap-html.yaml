@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{ include frontend.name . }}-content"
+  name: {{ include "frontend.name" . }}-content
   namespace: "{{ .Values.namespace }}"
 data:
   index.html: |
